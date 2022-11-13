@@ -4,3 +4,5 @@ project(cppgame)
 set(CMAKE_CXX_STANDARD 11)
 
 add_executable(21game 21game/main.cpp)
+add_executable(times times/main.cpp)
+add_executable(chargame chargame/main.cpp)

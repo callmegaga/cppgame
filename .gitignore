@@ -33,6 +33,7 @@
 
 # Compiled Dic
 cmake-build-debug
+cmake-build-debugvs
 
 # ide
 .idea/
