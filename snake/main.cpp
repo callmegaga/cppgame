@@ -7,9 +7,35 @@ using namespace std;
 
 const short int WD = 30, HT = 20;
 short int map[HT][WD] = {0};
-short int sx = WD / 3, sy = HT / 2, len = 4, i, j;
-const short int ESC = 27, LEFT = 75, UP = 72, RIGHT = 77, DOWN = 80;
-short int move_aspect = RIGHT, key = RIGHT;
+
+short int sx, sy, len;
+short int x[(WD - 2) * (HT - 2)], y[(WD - 2) * (HT - 2)];
+short int foodx, foody;
+
+void initGame() {
+    for (int i = 0; i < HT; i++) {
+        for (int j = 0; j < WD; j++) {
+            if (i == 0 || i == HT - 1 || j == 0 || j == WD - 1) {
+                map[i][j] = -2;
+            }
+        }
+    }
+
+    sx = WD / 3;
+    sy = HT / 2;
+    len = 4;
+
+    for (int i = 0; i <= len; i++) {
+        x[i] = sx;
+        y[i] = sy;
+        map[sx][sy] = 1;
+    }
+
+    srand(time(0));
+    foodx = rand() % (WD - 2) + 1;
+    foody = rand() % (HT - 2) + 1;
+    map[foody][foodx] = -1;
+}
 
 void gotoxy(short x, short y) {
     COORD coord = {x, y};
@@ -25,45 +51,70 @@ void showCursor(bool visible) {
 
 void drawMap() {
     gotoxy(WD / 2, 0);
-    cout << "          Snake Game" << endl;
+    cout << "Snake Game" << endl;
     for (int i = 0; i < HT; i++) {
         for (int j = 0; j < WD; j++) {
-            cout << (map[i][j] == len ? "@" : (map[i][j]) > 0 ? "◎" : (map[i][j] == 0 ? " " : (map[i][j]) == -1 ? "☆"
-                                                                                                                : "█"));
+            gotoxy(j, i + 1);
+            cout << (map[i][j] == -2 ? "#" : " ");
         }
-        cout << "\n";
     }
+}
+
+void drawSnake() {
+    gotoxy(x[0], y[0] + 1);
+    cout << " ";
+    gotoxy(x[len - 1], y[len - 1] + 1);
+    cout << "*";
+    gotoxy(x[len], y[len] + 1);
+    cout << "O";
+}
+
+void drawFoodLen() {
+    gotoxy(foodx, foody + 1);
+    cout << "☆";
+    gotoxy(0, HT + 1);
     cout << "length: " << len;
-    Sleep(500);
+}
+
+void gameOver(const char msg[]) {
+    gotoxy(0, HT + 2);
+    cout << msg;
+}
+
+bool wantExit() {
+    showCursor(true);
+    gotoxy(0, HT + 2);
+    cout << "结束游戏(y/n)?";
+    int key;
+    if ((key = getch()) == 'y' || key == 'Y') return true;
+    showCursor(false);
+    gotoxy(0, HT + 2);
+    cout << "                   ";
+    return false;
 }
 
 int main() {
-    for (int i = 0; i < HT; i++) {
-        for (int j = 0; j < WD; j++) {
-            if (i == 0 || i == HT - 1 || j == 0 || j == WD - 1) {
-                map[i][j] = -2;
-            }
-        }
-    }
-    srand(time(0));
-    map[rand() % (HT - 2) + 1][rand() % (WD - 2) + 1] = -1;
+    const short int ESC = 27, LEFT = 75, UP = 72, RIGHT = 77, DOWN = 80;
+    short int move_aspect = RIGHT, key = RIGHT;
 
+    initGame();
     showCursor(false);
+    drawMap();
+    drawFoodLen();
+
     while (true) {
-        drawMap();
+        drawSnake();
+        Sleep(200);
+
         if (kbhit()) {
             key = getch();
             if (key <= 0 || key > 127) {
                 key = getch();
             }
 
-            if (key == ESC) {
-                showCursor(true);
-                gotoxy(0, HT + 2);
-                cout << "End game(y/n)?";
-                if ((key = getch()) == 'y' || key == 'Y') {
-                    break;
-                }
+            if (key == ESC && wantExit()) {
+                gameOver("谢谢使用！再见！");
+                break;
             }
 
             if ((key == LEFT && move_aspect != RIGHT) || (key == RIGHT && move_aspect != LEFT) ||
@@ -84,19 +135,23 @@ int main() {
         } else if (map[sy][sx] == -1) {
             len++;
             do {
-                i = rand() % (HT - 2) + 1;
-                j = rand() % (WD - 2) + 1;
-            } while (map[i][j] != 0);
-            map[i][j] = -1;
+                foodx = rand() % (WD - 2) + 1;
+                foody = rand() % (HT - 2) + 1;
+            } while (map[foody][foodx] != 0);
+            map[foody][foodx] = -1;
+            drawFoodLen();
         } else {
-            for (i = 0; i < HT; i++) {
-                for (j = 0; j < WD; j++) {
-                    if (map[i][j] > 0) {
-                        map[i][j] -= 1;
-                    }
-                }
+            map[y[0]][x[0]] = 0;
+            for (int i = 0; i < len; i++) {
+                x[i] = x[i + 1];
+                y[i] = y[i + 1];
             }
         }
-        map[sy][sx] = len;
+        x[len] = sx;
+        y[len] = sy;
+        map[sy][sx] = 1;
     }
+    showCursor(true);
+    getch();
+    return 0;
 }
